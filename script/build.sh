@@ -1,25 +1,63 @@
 #!/usr/bin/env bash
 # macOS counterpart of windows_app_script/script/build.ps1 — asks which
 # version to release, generates resido-client from resido.sh, installs its
-# dependencies and packages the .dmg/.zip.
+# dependencies, packages the .dmg/.zip and uploads them to the distribution
+# host over SFTP, mirroring build.ps1's upload to residowindows.vorntech.sk.
 #
-# No SFTP/upload step here (unlike build.ps1) because this client has no
-# auto-update support yet — there is no update host to publish to. Once
-# auto-update is added for macOS, extend this script the same way build.ps1
-# uploads to residowindows.vorntech.sk.
+# No auto-update here (see resido.sh) — this is a plain distribution host,
+# not an update server. Installed apps do not check residomac.vorntech.sk on
+# their own; this upload just gives you one place to grab the latest build.
 #
 # Usage:
-#   ./build.sh                  # asks interactively for the version
+#   ./build.sh                  # asks interactively for version + SFTP login
 #   ./build.sh -v 3.5.1         # sets the version non-interactively
 #   ./build.sh --skip-version   # keeps the current .env version, no prompt
+#   ./build.sh --skip-upload    # build only, don't touch residomac.vorntech.sk
+
+# Re-exec in proper bash mode if invoked as `sh build.sh` — on macOS /bin/sh
+# IS bash, just started in restricted POSIX mode (BASH_VERSION is still set
+# there, so that alone can't be used to detect it; POSIXLY_CORRECT is what
+# actually flips on), which breaks this script's bash-only syntax (process
+# substitution, arrays).
+if [ -n "${POSIXLY_CORRECT:-}" ]; then
+  exec bash "$0" "$@"
+fi
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Guard against a second concurrent run: the clean-rebuild step below does
+# `rm -rf resido-client`, so if this script is started twice (e.g. it looked
+# stuck during the ~1-2 minute .zip compression and got re-run), the second
+# run deletes the first run's in-progress dist/ files out from under it —
+# electron-builder then fails with a confusing ENOENT on the .zip/.dmg it
+# was still writing. Fail fast instead with a clear message.
+LOCK_DIR="$SCRIPT_DIR/.build.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "Iny beh build.sh uz prebieha (existuje $LOCK_DIR)." >&2
+  echo "Ak si si isty, ze ziadny build v skutocnosti nebezi (napr. po predchadzajucom zlyhani/Ctrl+C), zmaz $LOCK_DIR rucne a skus znova." >&2
+  exit 1
+fi
+
+sftp_batch_file=""
+cleanup() {
+  [ -n "$sftp_batch_file" ] && rm -f "$sftp_batch_file"
+  rmdir "$LOCK_DIR" 2>/dev/null
+}
+trap cleanup EXIT
+
+FTP_HOST="residomac.vorntech.sk"
+FTP_HOST_FALLBACK="37.9.175.196"
+FTP_PORT=22
+# SFTP account username == the hostname on this server; only the password is
+# asked for (interactively, by ssh/sftp itself — never stored anywhere here).
 ENV_PATH="$SCRIPT_DIR/.env"
+
 VERSION=""
 SKIP_VERSION_PROMPT=0
+SKIP_UPLOAD=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -29,6 +67,10 @@ while [ $# -gt 0 ]; do
       ;;
     --skip-version)
       SKIP_VERSION_PROMPT=1
+      shift
+      ;;
+    --skip-upload)
+      SKIP_UPLOAD=1
       shift
       ;;
     *)
@@ -109,5 +151,33 @@ for f in "${artifacts[@]}"; do
   echo "  - $(basename "$f")"
 done
 
+# 3. Nahraj vsetko na distribucny host cez SFTP (port 22 = SSH/SFTP).
+if [ "$SKIP_UPLOAD" -eq 1 ]; then
+  echo ""
+  echo "--skip-upload zadany, subory hore nahraj rucne na https://$FTP_HOST/"
+  exit 0
+fi
+
 echo ""
-echo "Hotovo. Auto-update host zatial nie je nastaveny — subory hore rozdaj/nainstaluj rucne."
+echo "Nahravam na $FTP_HOST (SFTP, port $FTP_PORT)..."
+sftp_user="$FTP_HOST"
+
+sftp_batch_file="$(mktemp)"
+for f in "${artifacts[@]}"; do
+  printf 'put %q\n' "$f" >> "$sftp_batch_file"
+done
+echo "bye" >> "$sftp_batch_file"
+
+# NOTE: deliberately NOT using sftp's `-b batchfile` flag here — per
+# `man sftp`, batch mode "lacks user interaction" and per `man ssh_config`
+# BatchMode disables password prompts entirely (auth would just silently
+# fail/hang, no password prompt ever shown). Feeding the put/bye commands via
+# stdin redirection instead keeps interactive password auth working — the
+# same trust-on-first-use behaviour as build.ps1's -AcceptKey for host keys.
+if ! sftp -oPort="$FTP_PORT" -oStrictHostKeyChecking=accept-new "$sftp_user@$FTP_HOST" < "$sftp_batch_file"; then
+  echo "Pripojenie na $FTP_HOST zlyhalo, skusam IP fallback $FTP_HOST_FALLBACK..." >&2
+  sftp -oPort="$FTP_PORT" -oStrictHostKeyChecking=accept-new "$sftp_user@$FTP_HOST_FALLBACK" < "$sftp_batch_file"
+fi
+
+echo ""
+echo "Hotovo. Vsetky subory su nahrate na $FTP_HOST."

@@ -4,20 +4,28 @@ Najjednoduchsie: v Termináli spusti (z tohto priecinka):
 
 Postupne sa opyta:
 1. Aku verziu nastavit do RESIDO_CLIENT_VERSION v .env (Enter = bez zmeny)
+2. SFTP heslo pre residomac.vorntech.sk (port 22) — pouzivatelske meno je
+   natvrdo nastavene na "residomac.vorntech.sk", pyta sa len na heslo
 
-a potom uz sam: vygeneruje resido-client, spusti npm install + npm run dist.
-Vysledny .dmg (a .zip) najdes v resido-client/dist/.
+a potom uz sam: vygeneruje resido-client, spusti npm install + npm run dist,
+a na konci nahra .dmg/.zip/.blockmap z dist/ na residomac.vorntech.sk cez
+SFTP (fallback IP 37.9.175.196, port 22).
 
-Bez interaktivneho vypytania verzie (napr. v CI):
-./build.sh --skip-version
-./build.sh -v 3.5.1
+Bez interaktivneho vypytania verzie/uploadu (napr. v CI):
+./build.sh -v 3.5.1 --skip-version
 
-Zatial BEZ auto-update podpory (na rozdiel od Windows klienta) — nema zmysel
-nahravat build nikam na server, kazdu novu verziu treba nainstalovat rucne.
+Len build, ziadny upload:
+./build.sh --skip-upload
+
+Zatial BEZ auto-update podpory — residomac.vorntech.sk je tu len ako miesto
+na stiahnutie najnovsieho buildu, appka sama od seba aktualizacie
+nekontroluje ani neaplikuje. Novu verziu treba na kazdom Macu nainstalovat
+rucne (stiahnut novy .dmg, nahradit appku v /Applications).
 
 ---
 
-Manualny postup (co build.sh robi pod kapotou):
+Manualny postup (co build.sh robi pod kapotou, ak by SFTP upload zlyhal
+alebo si ho chces spravit rucne):
 
 chmod +x resido.sh build.sh
 ./resido.sh
@@ -25,7 +33,9 @@ cd resido-client
 npm install
 npm run dist
 
-Vystup: resido-client/dist/*.dmg a *.zip.
+Vystup: resido-client/dist/*.dmg a *.zip. Nahrat oba (aj .blockmap) na
+residomac.vorntech.sk (SFTP, host residomac.vorntech.sk alebo 37.9.175.196,
+port 22).
 
 Appka nie je podpisana Apple Developer ID certifikatom ani notarizovana —
 pri prvom spusteni z .dmg klikni na appku pravym tlacidlom a zvol "Otvorit"

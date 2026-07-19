@@ -4,23 +4,41 @@
 # macOS instead of an NSIS .exe for Windows.
 #
 # No auto-update support yet (no electron-updater, no publish/update-server
-# config, no "Skontrolovat aktualizacie" button) — this can be added later
-# the same way the Windows client has it, once we have a place to host
-# signed/notarized macOS builds.
+# config, no "Skontrolovat aktualizacie" button) — build.sh still uploads
+# the built .dmg/.zip to residomac.vorntech.sk so there is one place to
+# download the latest build from, but installed apps do not check for or
+# apply updates on their own. Auto-update can be added later the same way
+# the Windows client has it, once the app is signed with an Apple Developer
+# ID certificate (Squirrel.Mac, which electron-updater uses on macOS,
+# refuses to apply updates to an unsigned app).
+# Re-exec in proper bash mode if invoked as `sh resido.sh` — on macOS /bin/sh
+# IS bash, just started in restricted POSIX mode (BASH_VERSION is still set
+# there, so that alone can't be used to detect it; POSIXLY_CORRECT is what
+# actually flips on), which breaks this script's bash-only syntax (process
+# substitution, arrays).
+if [ -n "${POSIXLY_CORRECT:-}" ]; then
+  exec bash "$0" "$@"
+fi
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Read APP_NAME from .env (look two levels up from script = project root, then
 # fall back to the script's own .env), same lookup order as resido.ps1.
+# NOTE: the project root .env exists (Laravel's own .env) but does not
+# contain APP_NAME/RESIDO_CLIENT_VERSION for this script's purposes in a
+# way that matters here — keep checking later candidates until one of them
+# actually contains the line, instead of stopping at the first .env that
+# merely exists.
 app_name="Resido"
 for candidate in "$SCRIPT_DIR/../../.env" "$SCRIPT_DIR/.env"; do
   if [ -f "$candidate" ]; then
     line="$(grep -m1 '^APP_NAME=' "$candidate" || true)"
     if [ -n "$line" ]; then
       app_name="$(echo "$line" | sed -E "s/^APP_NAME=['\"]?([^'\"]+)['\"]?\$/\1/")"
+      break
     fi
-    break
   fi
 done
 if [ -n "${APP_NAME:-}" ]; then
@@ -35,8 +53,8 @@ for candidate in "$SCRIPT_DIR/../../.env" "$SCRIPT_DIR/.env"; do
     line="$(grep -m1 '^RESIDO_CLIENT_VERSION=' "$candidate" || true)"
     if [ -n "$line" ]; then
       client_version="$(echo "$line" | sed -E "s/^RESIDO_CLIENT_VERSION=['\"]?([^'\"]+)['\"]?\$/\1/")"
+      break
     fi
-    break
   fi
 done
 if [ -n "${RESIDO_CLIENT_VERSION:-}" ]; then
@@ -360,6 +378,12 @@ function createWindow() {
     if (input.meta && input.key.toLowerCase() === 'r') {
       event.preventDefault();
       mainWindow.webContents.reloadIgnoringCache();
+      return;
+    }
+
+    if (input.meta && input.key.toLowerCase() === 'o') {
+      event.preventDefault();
+      openSettingsScreen();
     }
   });
 
@@ -844,7 +868,7 @@ cat > "$root/src/offline.html" <<'EOF'
     <div id="status"></div>
 
     <div class="hint">
-      Klavesova skratka <code>Cmd+R</code> obnovi pripojenie.
+      Klavesova skratka <code>Cmd+R</code> obnovi pripojenie, <code>Cmd+O</code> kedykolvek otvori tuto obrazovku Nastaveni.
     </div>
     <div class="hint" id="installedVersion">Nainstalovana verzia Resido klienta: nacitavam...</div>
   </div>
@@ -965,19 +989,22 @@ npm run dist
 
 Vystupne subory budu v `dist/`.
 
-## Bez auto-update (zatial)
+## Distribucia — bez auto-update (zatial)
 
-Tento macOS klient zatial nema podporu automatickych aktualizacii (na rozdiel
-od Windows klienta v `windows_app_script/`) — ziadny `electron-updater`,
-ziadny update server, ziadne tlacidlo "Skontrolovat aktualizacie". Novu
-verziu treba nainstalovat rucne (stiahnut novy `.dmg`, nahradit appku v
-`/Applications`).
+`build.sh` po zbuildovani nahra `.dmg`/`.zip`/`.blockmap` na
+`residomac.vorntech.sk` (SFTP, fallback IP `37.9.175.196`, port 22) — je to
+teda jedno miesto, odkial sa da najnovsia verzia stiahnut, ale appka sama od
+seba nekontroluje ani neaplikuje aktualizacie (na rozdiel od Windows klienta
+v `windows_app_script/`). Ziadny `electron-updater`, ziadne tlacidlo
+"Skontrolovat aktualizacie". Novu verziu treba nainstalovat rucne (stiahnut
+novy `.dmg` z residomac.vorntech.sk, nahradit appku v `/Applications`).
 
-Ked to bude potrebne, da sa doplnit rovnako ako na Windows: pridat
-`electron-updater` zavislost, `publish` sekciu do `package.json` (build),
-update-check kod do `src/main.js` a hosting pre `latest-mac.yml` + build
-artefakty. Bude navyse potrebne appku podpisat (Apple Developer ID) a
-notarizovat — bez toho macOS aj tak zablokuje automaticku instalaciu.
+Ked to bude potrebne, auto-update sa da doplnit rovnako ako na Windows:
+pridat `electron-updater` zavislost, `publish` sekciu do `package.json`
+(build), update-check kod do `src/main.js` a generovanie `latest-mac.yml`
+pri kazdom builde. Bude navyse potrebne appku podpisat Apple Developer ID
+certifikatom a notarizovat — Squirrel.Mac (na com auto-update na macOS
+stoji) odmieta aplikovat update na nepodpisanu appku.
 
 ## Nepodpisana appka — Gatekeeper
 
