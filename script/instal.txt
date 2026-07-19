@@ -1,0 +1,33 @@
+Najjednoduchsie: v Termináli spusti (z tohto priecinka):
+
+  ./build.sh
+
+Postupne sa opyta:
+1. Aku verziu nastavit do RESIDO_CLIENT_VERSION v .env (Enter = bez zmeny)
+
+a potom uz sam: vygeneruje resido-client, spusti npm install + npm run dist.
+Vysledny .dmg (a .zip) najdes v resido-client/dist/.
+
+Bez interaktivneho vypytania verzie (napr. v CI):
+./build.sh --skip-version
+./build.sh -v 3.5.1
+
+Zatial BEZ auto-update podpory (na rozdiel od Windows klienta) — nema zmysel
+nahravat build nikam na server, kazdu novu verziu treba nainstalovat rucne.
+
+---
+
+Manualny postup (co build.sh robi pod kapotou):
+
+chmod +x resido.sh build.sh
+./resido.sh
+cd resido-client
+npm install
+npm run dist
+
+Vystup: resido-client/dist/*.dmg a *.zip.
+
+Appka nie je podpisana Apple Developer ID certifikatom ani notarizovana —
+pri prvom spusteni z .dmg klikni na appku pravym tlacidlom a zvol "Otvorit"
+(Gatekeeper inak nahlasi, ze appku nie je mozne overit). Podrobnejsie v
+resido-client/README.md po vygenerovani.
