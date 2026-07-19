@@ -67,11 +67,17 @@ else
   echo "Verzia sa nemeni, ostava $current_version."
 fi
 
-# 2. Generuj a zbuilduj.
+# 2. Cisty build — zmaz stary resido-client (stare node_modules aj stare
+# subory v dist by inak zostali a skoncili by v zozname vyssie).
+CLIENT_ROOT="$SCRIPT_DIR/resido-client"
+if [ -d "$CLIENT_ROOT" ]; then
+  echo "Mazem stary resido-client..."
+  rm -rf "$CLIENT_ROOT"
+fi
+
 echo "Generujem resido-client z resido.sh..."
 "$SCRIPT_DIR/resido.sh"
 
-CLIENT_ROOT="$SCRIPT_DIR/resido-client"
 if [ ! -d "$CLIENT_ROOT" ]; then
   echo "resido-client nebol vytvoreny — skontroluj vystup resido.sh vyssie." >&2
   exit 1
