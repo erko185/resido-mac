@@ -618,9 +618,13 @@ async function printUrlSilently(url, printerName, requirePrinter) {
     });
 
     printWin.webContents.once('did-finish-load', async () => {
+      // scaleFactor 100 keeps Chromium from fit-scaling the page onto the
+      // driver's paper when the driver ignores our custom pageSize width -
+      // scaled output shows up as content overflowing the printable width
+      // (right edge cut, long lines wrapped to the left margin).
       const options = printerName
-        ? { silent: true, deviceName: printerName, printBackground: true, landscape: false }
-        : { silent: true, printBackground: true, landscape: false };
+        ? { silent: true, deviceName: printerName, printBackground: true, landscape: false, scaleFactor: 100 }
+        : { silent: true, printBackground: true, landscape: false, scaleFactor: 100 };
 
       const layout = await measurePrintLayout(printWin.webContents);
       const widthMm = paperWidthMm > 0 ? paperWidthMm : layout.widthMm;
