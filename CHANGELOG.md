@@ -3,6 +3,16 @@
 All notable changes to the macOS desktop client (Electron shell for the Resido
 web app). Versions match `RESIDO_CLIENT_VERSION` in `script/.env`.
 
+## [Unreleased]
+
+### Fixed
+
+- **Bon tails were cut off on printers with a long head-to-cutter distance (CK710)**: in RAW ESC/POS mode the feed before the cut used `ESC d 6` (six text lines), whose real length depends on the firmware's line spacing and fell short of the CK710's head-to-cutter distance — the last line(s) stayed behind the blade and came out on top of the next bon. The feed is now 36 mm of blank raster rows, which every printer advances dot-exactly (`ESC J`, the dot-based feed command, turned out to be ignored outright by XP-80 clones, so no pure feed command is trusted anymore). Matches Windows client 3.7.6.
+
+### Added
+
+- Print diagnostics log a `RAW feed before cut: ...` line, so the log identifies builds carrying this fix.
+
 ## [1.1.0] - 2026-08-01
 
 Port of the Windows client's printing overhaul (Windows client 3.7.x).
