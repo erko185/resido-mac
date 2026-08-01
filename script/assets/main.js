@@ -550,8 +550,11 @@ async function readPrintCopies(webContents) {
 
 const RAW_DOTS_PER_MM = 8;
 // Feed pushed out before each cut so the printed end clears the
-// head-to-cutter gap. Must stay <= 31mm (ESC J n caps at 255 dots).
-const RAW_CUT_FEED_MM = 28;
+// head-to-cutter gap. The gap seen on a slip is this feed MINUS the
+// printer's head-to-cutter distance (~13mm on an XP-80 clone, estimated
+// up to ~30mm on the CK710), so this must exceed the largest gap out
+// there with some margin.
+const RAW_CUT_FEED_MM = 36;
 const RAW_ZOOM = RAW_DOTS_PER_MM / (96 / 25.4); // ~2.1167 device px per CSS px
 const RAW_DEFAULT_WIDTH_MM = 72;
 const RAW_MIN_HEIGHT_DOTS = 50 * RAW_DOTS_PER_MM;
@@ -658,16 +661,19 @@ function encodeEscPosRaster(image, targetWidthDots) {
   // works on any printer that prints at all.
   const feedDots = RAW_CUT_FEED_MM * RAW_DOTS_PER_MM;
   printLog(`RAW feed before cut: ${RAW_CUT_FEED_MM}mm (dotted raster, ${feedDots} rows)`);
-  chunks.push(Buffer.from([
-    0x1d, 0x76, 0x30, 0x00, // GS v 0 m=0
-    widthBytes & 0xff, (widthBytes >> 8) & 0xff,
-    feedDots & 0xff, (feedDots >> 8) & 0xff
-  ]));
   const feedRaster = Buffer.alloc(feedDots * widthBytes);
   for (let y = 0; y < feedDots; y++) {
     feedRaster[y * widthBytes] = 0x80;
   }
-  chunks.push(feedRaster);
+  for (let y = 0; y < feedDots; y += 255) {
+    const chunkRows = Math.min(255, feedDots - y);
+    chunks.push(Buffer.from([
+      0x1d, 0x76, 0x30, 0x00, // GS v 0 m=0
+      widthBytes & 0xff, (widthBytes >> 8) & 0xff,
+      chunkRows & 0xff, (chunkRows >> 8) & 0xff
+    ]));
+    chunks.push(feedRaster.subarray(y * widthBytes, (y + chunkRows) * widthBytes));
+  }
   chunks.push(Buffer.from([0x1d, 0x56, 0x00])); // GS V 0 full cut
 
   return Buffer.concat(chunks);
