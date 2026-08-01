@@ -651,20 +651,15 @@ function encodeEscPosRaster(image, targetWidthDots) {
     chunks.push(rows.subarray(y * widthBytes, (y + chunkRows) * widthBytes));
   }
 
-  // Feed past the cutter by extending the raster itself: rows carrying a
-  // single dot at the left edge (a faint hairline in the otherwise blank
-  // tail). Every pure feed command proved unreliable across firmwares:
-  // ESC d is line-spacing dependent (fell short of the CK710's
-  // head-to-cutter distance), ESC J was ignored outright by an XP-80
-  // clone, and fully blank raster rows are dropped by remove-blank-lines
-  // paper saving. Rows with ink cannot be dropped, and raster advance
-  // works on any printer that prints at all.
+  // Feed past the cutter by extending the raster with blank rows - raster
+  // advance is honoured by any printer that prints at all. Feed commands
+  // are a firmware lottery: ESC d is line-spacing dependent (fell short of
+  // the CK710's head-to-cutter distance), ESC J was ignored outright by an
+  // XP-80 clone. Blank rows (not dotted) so the part of the feed that ends
+  // up behind the blade leaves no marks on top of the next slip.
   const feedDots = RAW_CUT_FEED_MM * RAW_DOTS_PER_MM;
-  printLog(`RAW feed before cut: ${RAW_CUT_FEED_MM}mm (dotted raster, ${feedDots} rows)`);
+  printLog(`RAW feed before cut: ${RAW_CUT_FEED_MM}mm (blank raster, ${feedDots} rows)`);
   const feedRaster = Buffer.alloc(feedDots * widthBytes);
-  for (let y = 0; y < feedDots; y++) {
-    feedRaster[y * widthBytes] = 0x80;
-  }
   for (let y = 0; y < feedDots; y += 255) {
     const chunkRows = Math.min(255, feedDots - y);
     chunks.push(Buffer.from([
