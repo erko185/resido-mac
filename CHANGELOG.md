@@ -3,7 +3,7 @@
 All notable changes to the macOS desktop client (Electron shell for the Resido
 web app). Versions match `RESIDO_CLIENT_VERSION` in `script/.env`.
 
-## [Unreleased]
+## [1.1.1] - 2026-08-01
 
 ### Fixed
 
