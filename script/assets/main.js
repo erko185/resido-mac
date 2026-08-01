@@ -549,6 +549,9 @@ async function readPrintCopies(webContents) {
 // ---------------------------------------------------------------------------
 
 const RAW_DOTS_PER_MM = 8;
+// Blank-raster feed pushed out before each cut so the printed end clears the
+// head-to-cutter gap. Must stay <= 255 rows (single GS v 0 chunk).
+const RAW_CUT_FEED_MM = 24;
 const RAW_ZOOM = RAW_DOTS_PER_MM / (96 / 25.4); // ~2.1167 device px per CSS px
 const RAW_DEFAULT_WIDTH_MM = 72;
 const RAW_MIN_HEIGHT_DOTS = 50 * RAW_DOTS_PER_MM;
@@ -645,7 +648,18 @@ function encodeEscPosRaster(image, targetWidthDots) {
     chunks.push(rows.subarray(y * widthBytes, (y + chunkRows) * widthBytes));
   }
 
-  chunks.push(Buffer.from([0x1b, 0x64, 0x06])); // feed 6 lines past the cutter
+  // Feed past the cutter with blank raster rows rather than ESC d: raster
+  // advance is honoured by any firmware that prints the content at all,
+  // while ESC d line feeds fall short of the head-to-cutter distance on
+  // some printers (CK710) - the receipt tail then stayed behind the blade
+  // and came out on top of the next slip.
+  const feedRows = RAW_CUT_FEED_MM * RAW_DOTS_PER_MM;
+  chunks.push(Buffer.from([
+    0x1d, 0x76, 0x30, 0x00, // GS v 0 m=0
+    widthBytes & 0xff, (widthBytes >> 8) & 0xff,
+    feedRows & 0xff, (feedRows >> 8) & 0xff
+  ]));
+  chunks.push(Buffer.alloc(feedRows * widthBytes));
   chunks.push(Buffer.from([0x1d, 0x56, 0x00])); // GS V 0 full cut
 
   return Buffer.concat(chunks);
