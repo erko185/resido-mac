@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APP_NAME_PLACEHOLDER</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+    .card {
+      width: min(580px, calc(100vw - 32px));
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    p {
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      background: #0b1220;
+      color: #e2e8f0;
+      margin-bottom: 14px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+    .secondary {
+      background: #334155;
+      color: white;
+    }
+    #status {
+      margin-top: 14px;
+      min-height: 24px;
+      color: #93c5fd;
+    }
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      background: #0b1220;
+      color: #e2e8f0;
+      margin-bottom: 14px;
+      appearance: none;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 18px 0 10px;
+      border-top: 1px solid #1e293b;
+      padding-top: 14px;
+    }
+    .raw-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: -8px 0 14px;
+      font-weight: normal;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .raw-check input {
+      width: auto;
+      margin: 0;
+    }
+    .hint {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .summary {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: #0b1220;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    code {
+      background: #0b1220;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>APP_NAME_PLACEHOLDER</h1>
+    <p>Desktop klient pre manazment. Zadaj adresu servera a uloz nastavenia.</p>
+
+    <label for="serverUrl">Adresa servera</label>
+    <input id="serverUrl" type="text" placeholder="http://192.168.x.x" />
+
+    <div class="section-title">Tlacenie blocikov</div>
+
+    <div class="summary" id="printerSummary">Tlaciaren pre blociky: nacitavam...</div>
+
+    <label for="printer">Tlaciaren 1 pre blociky</label>
+    <select id="printer"><option value="">— nepouzivat —</option></select>
+    <label class="raw-check"><input type="checkbox" id="printerRaw" /> RAW ESC/POS (termotlaciaren — obide ovladac tlaciarne, odporucane)</label>
+
+    <label for="printer2">Bonovacka 1</label>
+    <select id="printer2"><option value="">— nepouzivat —</option></select>
+    <label class="raw-check"><input type="checkbox" id="printer2Raw" /> RAW ESC/POS (termotlaciaren — obide ovladac tlaciarne)</label>
+
+    <label for="printer3">Bonovacka 2</label>
+    <select id="printer3"><option value="">— nepouzivat —</option></select>
+    <label class="raw-check"><input type="checkbox" id="printer3Raw" /> RAW ESC/POS (termotlaciaren — obide ovladac tlaciarne)</label>
+
+    <label for="printer4">Bonovacka 3</label>
+    <select id="printer4"><option value="">— nepouzivat —</option></select>
+    <label class="raw-check"><input type="checkbox" id="printer4Raw" /> RAW ESC/POS (termotlaciaren — obide ovladac tlaciarne)</label>
+
+    <label for="printer5">Bonovacka 4</label>
+    <select id="printer5"><option value="">— nepouzivat —</option></select>
+    <label class="raw-check"><input type="checkbox" id="printer5Raw" /> RAW ESC/POS (termotlaciaren — obide ovladac tlaciarne)</label>
+
+    <div class="row">
+      <button class="secondary" id="loadPrintersBtn">Nacitat tlaciarne</button>
+    </div>
+
+    <!-- Hidden unless print diagnostics are switched on with Cmd+Shift+L. -->
+    <div id="diagnosticsSection" style="display:none">
+      <div class="section-title">Diagnostika tlace</div>
+
+      <div class="summary" id="printLog" style="white-space:pre-wrap; font-family:monospace; font-size:12px; max-height:170px; overflow:auto"></div>
+
+      <div class="row">
+        <button class="secondary" id="refreshLogBtn">Obnovit log</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="primary" id="saveBtn">Ulozit a pripojit</button>
+      <button class="secondary" id="retryBtn">Skusit znova</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="hint">
+      Klavesova skratka <code>Cmd+R</code> obnovi pripojenie, <code>Cmd+O</code> kedykolvek otvori tuto obrazovku Nastaveni.
+    </div>
+    <div class="hint" id="installedVersion">Nainstalovana verzia Resido klienta: nacitavam...</div>
+  </div>
+
+  <script>
+    const input = document.getElementById('serverUrl');
+    const selPrinter = document.getElementById('printer');
+    const selPrinter2 = document.getElementById('printer2');
+    const selPrinter3 = document.getElementById('printer3');
+    const selPrinter4 = document.getElementById('printer4');
+    const selPrinter5 = document.getElementById('printer5');
+    const chkPrinterRaw = document.getElementById('printerRaw');
+    const chkPrinter2Raw = document.getElementById('printer2Raw');
+    const chkPrinter3Raw = document.getElementById('printer3Raw');
+    const chkPrinter4Raw = document.getElementById('printer4Raw');
+    const chkPrinter5Raw = document.getElementById('printer5Raw');
+    const status = document.getElementById('status');
+    const saveBtn = document.getElementById('saveBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const loadPrintersBtn = document.getElementById('loadPrintersBtn');
+    const printerSummary = document.getElementById('printerSummary');
+    const installedVersion = document.getElementById('installedVersion');
+    const printLogBox = document.getElementById('printLog');
+    const refreshLogBtn = document.getElementById('refreshLogBtn');
+    const diagnosticsSection = document.getElementById('diagnosticsSection');
+
+    function renderPrintLog(settings) {
+      diagnosticsSection.style.display = settings.printDiagnostics ? 'block' : 'none';
+
+      const log = (settings.printLog || '').trim();
+      printLogBox.textContent = log || 'Zatial nic - vytlac blocik a stlac Obnovit log.';
+    }
+
+    function renderPrinterSummary(_printers, saved) {
+      printerSummary.textContent = `Tlaciaren pre blociky: ${saved || 'nenastavena'}`;
+    }
+
+    // Every slot is chosen explicitly - nothing auto-selects the system
+    // default printer any more (RAW ESC/POS needs a named printer, and
+    // implicit default-printer output was a source of wrong-printer prints).
+    function populatePrinters(el, printers, saved) {
+      while (el.options.length > 1) el.remove(1);
+      printers.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        opt.textContent = p.name;
+        if (p.name === saved) opt.selected = true;
+        el.appendChild(opt);
+      });
+    }
+
+    async function init() {
+      const settings = await window.reservationClient.getSettings();
+      input.value = settings.serverUrl || '';
+      const printers = await window.reservationClient.listPrinters();
+      populatePrinters(selPrinter, printers, settings.printer || '');
+      populatePrinters(selPrinter2, printers, settings.printer2 || '');
+      populatePrinters(selPrinter3, printers, settings.printer3 || '');
+      populatePrinters(selPrinter4, printers, settings.printer4 || '');
+      populatePrinters(selPrinter5, printers, settings.printer5 || '');
+      chkPrinterRaw.checked = !!settings.printerRaw;
+      chkPrinter2Raw.checked = !!settings.printer2Raw;
+      chkPrinter3Raw.checked = !!settings.printer3Raw;
+      chkPrinter4Raw.checked = !!settings.printer4Raw;
+      chkPrinter5Raw.checked = !!settings.printer5Raw;
+      renderPrinterSummary(printers, settings.printer || '');
+      renderPrintLog(settings);
+      installedVersion.textContent = `Nainstalovana verzia Resido klienta: ${settings.appVersion || 'neznama'}`;
+    }
+
+    loadPrintersBtn.addEventListener('click', async () => {
+      loadPrintersBtn.textContent = 'Nacitavam...';
+      const printers = await window.reservationClient.listPrinters();
+      const settings = await window.reservationClient.getSettings();
+      populatePrinters(selPrinter, printers, settings.printer || '');
+      populatePrinters(selPrinter2, printers, settings.printer2 || '');
+      populatePrinters(selPrinter3, printers, settings.printer3 || '');
+      populatePrinters(selPrinter4, printers, settings.printer4 || '');
+      populatePrinters(selPrinter5, printers, settings.printer5 || '');
+      renderPrinterSummary(printers, settings.printer || '');
+      loadPrintersBtn.textContent = 'Nacitat tlaciarne';
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      status.textContent = 'Pripajam...';
+      const result = await window.reservationClient.saveSettings({
+        serverUrl: input.value.trim(),
+        printer: selPrinter.value,
+        printer2: selPrinter2.value,
+        printer3: selPrinter3.value,
+        printer4: selPrinter4.value,
+        printer5: selPrinter5.value,
+        printerRaw: chkPrinterRaw.checked,
+        printer2Raw: chkPrinter2Raw.checked,
+        printer3Raw: chkPrinter3Raw.checked,
+        printer4Raw: chkPrinter4Raw.checked,
+        printer5Raw: chkPrinter5Raw.checked
+      });
+      const printers = await window.reservationClient.listPrinters();
+      const settings = await window.reservationClient.getSettings();
+      populatePrinters(selPrinter, printers, settings.printer || '');
+      populatePrinters(selPrinter2, printers, settings.printer2 || '');
+      populatePrinters(selPrinter3, printers, settings.printer3 || '');
+      populatePrinters(selPrinter4, printers, settings.printer4 || '');
+      populatePrinters(selPrinter5, printers, settings.printer5 || '');
+      renderPrinterSummary(printers, settings.printer || '');
+      status.textContent = result.ok ? 'Ulozene.' : (result.message || 'Nepodarilo sa ulozit.');
+    });
+
+    retryBtn.addEventListener('click', async () => {
+      status.textContent = 'Obnovujem...';
+      await window.reservationClient.reloadTarget();
+      status.textContent = 'Hotovo.';
+    });
+
+    refreshLogBtn.addEventListener('click', async () => {
+      const settings = await window.reservationClient.getSettings();
+      renderPrintLog(settings);
+    });
+
+    init();
+  </script>
+</body>
+</html>

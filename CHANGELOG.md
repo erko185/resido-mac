@@ -3,6 +3,25 @@
 All notable changes to the macOS desktop client (Electron shell for the Resido
 web app). Versions match `RESIDO_CLIENT_VERSION` in `script/.env`.
 
+## [1.1.0] - 2026-08-01
+
+Port of the Windows client's printing overhaul (Windows client 3.7.x).
+
+### Added
+
+- **RAW ESC/POS printing** (per printer slot, on by default): the receipt/bon page is rendered off-screen, rasterized at exactly the configured paper width (203 dpi) and submitted to CUPS as a raw job (`lp -o raw`), bypassing the printer driver entirely. Fixes thermal printers (Xprinter/POS-80C and similar) whose drivers ignore custom page widths and print shifted or clipped receipts. Existing installs get RAW switched on once by a one-time migration; turning a slot back off stays respected.
+- **Hidden print diagnostics** (`Cmd+Shift+L`): logs the print path, paper width, page zoom and how much of the raster is actually inked, shown in the settings screen and written to `print-log.txt` in the app's data folder. Off by default.
+
+### Fixed
+
+- **Receipts printed narrower than the paper**: the RAW renderer measures the window's page zoom factor (shared per origin within a session, so a window zoomed with `Cmd+-` shrank prints too) and compensates for it, printing at the configured width regardless of how the operator zoomed the window.
+- **Implicit system-default printing removed**: every slot, including the receipt printer, is now picked explicitly — RAW ESC/POS needs a named printer, and silently printing to whatever the system considers default was a source of wrong-printer/wrong-width output.
+
+### Changed
+
+- The client source (`main.js`, `preload.js`, `offline.html`, README) moved out of `resido.sh` heredocs into plain files under `script/assets/`, mirroring the Windows client layout — print fixes can now be ported between the two by diffing files directly.
+- `RESIDO_CLIENT_VERSION` in `script/.env` corrected to the macOS versioning scheme (was left at the Windows client's `3.6.0` before the repository split).
+
 ## [1.0.0] - 2026-08-01
 
 ### Added
