@@ -551,7 +551,7 @@ async function readPrintCopies(webContents) {
 const RAW_DOTS_PER_MM = 8;
 // Blank-raster feed pushed out before each cut so the printed end clears the
 // head-to-cutter gap. Must stay <= 255 rows (single GS v 0 chunk).
-const RAW_CUT_FEED_MM = 24;
+const RAW_CUT_FEED_MM = 28;
 const RAW_ZOOM = RAW_DOTS_PER_MM / (96 / 25.4); // ~2.1167 device px per CSS px
 const RAW_DEFAULT_WIDTH_MM = 72;
 const RAW_MIN_HEIGHT_DOTS = 50 * RAW_DOTS_PER_MM;
